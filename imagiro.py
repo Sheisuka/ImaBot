@@ -20,7 +20,7 @@ import logging
 from telegram import Update
 from telegram.ext import Updater, CommandHandler, CallbackContext
 
-TOKEN = '5222745741:AAHJws-Ejl09au5E21wXhpKpMRF5ZVI32Gc'
+TOKEN = 'TOKEN'
 
 # Enable logging
 logging.basicConfig(
