@@ -1,10 +1,11 @@
 # Импорты
 import logging
 from telegram import Update, ReplyKeyboardMarkup
-from telegram.ext import Updater, CommandHandler, CallbackContext, ConversationHandler, MessageHandler, Filters
+from telegram.ext import Updater, CommandHandler, CallbackContext, ConversationHandler, MessageHandler, Filters, \
+    DictPersistence
 
 # Токен бота. Удалять перед комитами
-TOKEN = '5222745741:AAHJws-Ejl09au5E21wXhpKpMRF5ZVI32Gc'
+TOKEN = ''
 
 # Индикатор использования русского языка. При значении False все сообщения отправляются на английском
 RU = True
@@ -21,6 +22,7 @@ logger = logging.getLogger(__name__)
 
 class Bot:
     def __init__(self):
+        self.user_dict = DictPersistence()
         self.process_commands = [['/crop_photo', '/change_color'],
                                  ['/gray_scale', '/convert'],
                                  ['/delete_color', '/resize'],
@@ -29,44 +31,48 @@ class Bot:
 
     # Отправляет короткое привествие пользователю
     def start(self, update: Update, context: CallbackContext) -> int:
+        user = update.message.from_user.username
+        logger.info("User %s sent has started a conversation.", user)
         global RU
         if update.message.from_user['language_code'] != 'ru':
             RU = False
         if RU:
-            update.message.reply_text(f"Привет {update.message.from_user.username}! "
+            self.yesno_keyboard = [['Да', 'Нет']]
+            update.message.reply_text(f"Привет {user}! "
                                       f"Я Имаджеро. Что привело тебя ко мне? Могу ли я помочь тебе обработать парочку"
                                       f" фото"
-                                      f"", reply_markup=self.process_menu)
+                                      f"", reply_markup=ReplyKeyboardMarkup(self.yesno_keyboard, one_time_keyboard=True))
         else:
-            update.message.reply_text(f"Hi {update.message.from_user['username']}! I'm Imagero. Will I help you"
+            self.yesno_keyboard = [['Yes', 'No']]
+            update.message.reply_text(f"Hi {user}! I'm Imagero. Will I help you"
                                       f"with processing some photos?",
-                                      reply_markup=self.process_menu)
-        print(update.message.text)
+                                      reply_markup=ReplyKeyboardMarkup(self.yesno_keyboard, one_time_keyboard=True))
+        print(ASK)
         return ASK
 
     def get_photo(self, update: Update, context: CallbackContext) -> int:
         # Получение фотографии от пользователя
-        user = update.message.from_user.username
-        photo_file = update.message.photo[-1].get_file()
-        photo_file.download(f'photos/{user}_photo.jpg')
-        print('success')
-        return PROCESS
+        try:
+            user = update.message.from_user.username
+            photo_file = update.message.photo[-1].get_file()
+            photo_file.download(f'photos/{user}_photo.jpg')
+            update.message.reply_text('Я получил твоё фото. Выбери, что мне с ним сделать',
+                                      reply_markup=self.process_menu)
+            return PROCESS
+        except:
+            update.message.reply_text('Что-то пошло не так. Попробуй ещё раз')
 
-    def check_help(self, update: Update) -> int:
-        print('я тут')
+    def ask(self, update: Update, context: CallbackContext) -> int:
+        update.message.reply_text('Отлично! Тогда отправь мне одно фото, которое ты хочешь обработать')
         return WAIT
         # return 0
 
     def show_menu(self, update: Update, context: CallbackContext) -> None:
         update.message.reply_markup = self.process_menu
 
-    def alarm(self, context: CallbackContext) -> None:
-        """Send the alarm message."""
-        job = context.job
-        context.bot.send_message(job.context, text='Beep!')
-
-    def cancel(self):
-        pass
+    def cancel(self, update: Update, context: CallbackContext):
+        logger.info("User %s left us.", update.message.from_user.username)
+        return ConversationHandler.END
 
     def remove_job_if_exists(self, name: str, context: CallbackContext) -> bool:
         """Remove job with given name. Returns whether job was removed."""
@@ -77,34 +83,6 @@ class Bot:
             job.schedule_removal()
         return True
 
-    def set_timer(self, update: Update, context: CallbackContext) -> None:
-        """Add a job to the queue."""
-        chat_id = update.message.chat_id
-        try:
-            # args[0] should contain the time for the timer in seconds
-            due = int(context.args[0])
-            if due < 0:
-                update.message.reply_text('Sorry we can not go back to future!')
-                return
-
-            job_removed = self.remove_job_if_exists(str(chat_id), context)
-            context.job_queue.run_once(self.alarm, due, context=chat_id, name=str(chat_id))
-
-            text = 'Timer successfully set!'
-            if job_removed:
-                text += ' Old one was removed.'
-            update.message.reply_text(text)
-
-        except (IndexError, ValueError):
-            update.message.reply_text('Usage: /set <seconds>')
-
-    def unset(self, update: Update, context: CallbackContext) -> None:
-        """Remove the job if the user changed their mind."""
-        chat_id = update.message.chat_id
-        job_removed = self.remove_job_if_exists(str(chat_id), context)
-        text = 'Timer successfully cancelled!' if job_removed else 'You have no active timer.'
-        update.message.reply_text(text)
-
     def main(self) -> None:
         global WAIT, ASK, PROCESS
         # Запуск бота
@@ -112,16 +90,18 @@ class Bot:
 
         dispatcher = updater.dispatcher
 
-        # Добавление хэндлера с состояниями
         conv_handler = ConversationHandler(entry_points=[CommandHandler('start', self.start)],
                                            states={
+                                               ASK: [MessageHandler(Filters.regex('да'), self.ask),
+                                                     MessageHandler(Filters.regex('нет'), self.cancel)],
                                                WAIT: [MessageHandler(Filters.photo, self.get_photo)],
-                                               ASK: [MessageHandler(Filters.regex('да'), self.check_help)],
                                                # PROCESS: [CommandHandler('crop_photo|change_color|gray_scale|'
                                                #                          'convert|delete_color|resize',
                                                #                          self.show_menu)]
+                                               PROCESS: [CommandHandler('crop_photo', self.cancel)],
                                            },
                                            fallbacks=[CommandHandler('cancel', self.cancel)])
+        # Добавление хэндлера с состояниями
 
         dispatcher.add_handler(conv_handler)
         # Начало поиска полученных сообщений
