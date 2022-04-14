@@ -112,12 +112,6 @@ class Bot:
 
         dispatcher = updater.dispatcher
 
-        # Добавление обрабатываемых команд
-        dispatcher.add_handler(CommandHandler("start", self.start))
-        # dispatcher.add_handler(CommandHandler("help", self.start))
-        dispatcher.add_handler(CommandHandler("set", self.set_timer))
-        # dispatcher.add_handler(CommandHandler("unset", self.unset))
-
         # Добавление хэндлера с состояниями
         conv_handler = ConversationHandler(entry_points=[CommandHandler('start', self.start)],
                                            states={
