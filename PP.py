@@ -2,6 +2,7 @@
 
 
 from PIL import Image
+from pprint import pprint as print
 import os
 import sys
 
@@ -26,13 +27,30 @@ def gray_scale(image: str):
     return
 
 
-def count_pixels(image: str) -> int:
+def check_count_pixels(image: str) -> int:
     size = Image.open(image).size
-    return size[0] * size[1]
+    return size[0] * size[1] < 600 ** 2
 
 
-def alpha_image(image: str):
-    pass
+def count_unique(image: str) -> dict:
+    image = Image.open(image)
+    x, y = image.size
+    pixels = image.load()
+    unique_pixels = dict()
+    for x_i in range(x):
+        for y_i in range(y):
+            if pixels[x_i, y_i] in unique_pixels:
+                unique_pixels[pixels[x_i, y_i]] += 1
+            else:
+                unique_pixels[pixels[x_i, y_i]] = 1
+    sorted_ = sorted(unique_pixels.items(), key=lambda item: item[1], reverse=True)
+    sorted_unique = {k: v for k, v in sorted_}
+    return sorted_unique
+
+
+
+def alpha_image(image: str, pixel):
+
 
 
 def jpg_to_png(image: str):
@@ -59,3 +77,4 @@ def resize(image):
 def crop_photo(image):
     pass
 
+print(count_unique('data/photos/sheisuka_photo.jpg'))

@@ -3,6 +3,7 @@ import logging
 from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, CallbackContext, ConversationHandler, MessageHandler, Filters, \
     DictPersistence
+import PP
 
 # Токен бота. Удалять перед комитами
 TOKEN = ''
@@ -47,7 +48,6 @@ class Bot:
             update.message.reply_text(f"Hi {user}! I'm Imagero. Will I help you"
                                       f"with processing some photos?",
                                       reply_markup=ReplyKeyboardMarkup(self.yesno_keyboard, one_time_keyboard=True))
-        print(ASK)
         return ASK
 
     def get_photo(self, update: Update, context: CallbackContext) -> int:
@@ -62,10 +62,16 @@ class Bot:
         except:
             update.message.reply_text('Что-то пошло не так. Попробуй ещё раз')
 
+    def help_colors(self, update: Update, context: CallbackContext):
+        update.message.reply_text(f'Краткая информация, необходимая для работы со мной:'
+                                  f'Изображение представяляется в виде 3 цифр в формате rgb'
+                                  f'Для того, чтобы сообщить мне какой цвет использовать, отправь мне 3 цифры в пределах'
+                                  f'0-255. Таблицу соответствия основных цветов и rgb ты можешь увидеть ниже. Тебе '
+                                  f'необязательно выбирать цвет именно из таблицы')
+
     def ask(self, update: Update, context: CallbackContext) -> int:
         update.message.reply_text('Отлично! Тогда отправь мне одно фото, которое ты хочешь обработать')
         return WAIT
-        # return 0
 
     def show_menu(self, update: Update, context: CallbackContext) -> None:
         update.message.reply_markup = self.process_menu
@@ -84,8 +90,8 @@ class Bot:
         return True
 
     def main(self) -> None:
+        """Запуск бота"""
         global WAIT, ASK, PROCESS
-        # Запуск бота
         updater = Updater(TOKEN)
 
         dispatcher = updater.dispatcher
