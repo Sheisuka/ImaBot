@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 class Bot:
     def __init__(self):
-        self.user_dict = DictPersistence()
+        self.user_info = dict()
         self.process_commands = [['/crop_photo', '/change_color'],
                                  ['/gray_scale', '/convert'],
                                  ['/delete_color', '/resize'],
@@ -53,13 +53,18 @@ class Bot:
     def get_photo(self, update: Update, context: CallbackContext) -> int:
         # Получение фотографии от пользователя
         try:
-            user = update.message.from_user.username
+            self.user_info['user'], self.user_info['chat_id'] = update.message.from_user.username, update.message.chat_id
             photo_file = update.message.photo[-1].get_file()
-            photo_file.download(f'photos/{user}_photo.jpg')
-            update.message.reply_text('Я получил твоё фото. Выбери, что мне с ним сделать',
-                                      reply_markup=self.process_menu)
+            photo_file.download(f'data/photos/get/{self.user_info["user"]}_photo.jpg')
+            update.message.reply_text('Обрабатываю....')
+            self.user_info['last_photo'] = PP.count_unique(f'data/photos/get/{self.user_info["user"]}_photo.jpg',
+                                                           self.user_info["user"])
+            update.message.bot.send_photo(chat_id=self.user_info["chat_id"],
+                                          photo=open(f'data/photos/to_send/{self.user_info["user"]}.jpg', 'rb'),
+                                      caption='Я получил твоё фото. Вот информация о нём. '
+                                              'Выбери, что мне с ним сделать', reply_markup=self.process_menu)
             return PROCESS
-        except:
+        except IOError as error:
             update.message.reply_text('Что-то пошло не так. Попробуй ещё раз')
 
     def help_colors(self, update: Update, context: CallbackContext):
@@ -98,13 +103,10 @@ class Bot:
 
         conv_handler = ConversationHandler(entry_points=[CommandHandler('start', self.start)],
                                            states={
-                                               ASK: [MessageHandler(Filters.regex('да'), self.ask),
+                                               ASK: [MessageHandler(Filters.regex('Да|да'), self.ask),
                                                      MessageHandler(Filters.regex('нет'), self.cancel)],
                                                WAIT: [MessageHandler(Filters.photo, self.get_photo)],
-                                               # PROCESS: [CommandHandler('crop_photo|change_color|gray_scale|'
-                                               #                          'convert|delete_color|resize',
-                                               #                          self.show_menu)]
-                                               PROCESS: [CommandHandler('crop_photo', self.cancel)],
+                                               #PROCESS: [CommandHandler('change_color', PP.change_color())]
                                            },
                                            fallbacks=[CommandHandler('cancel', self.cancel)])
         # Добавление хэндлера с состояниями
