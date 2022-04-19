@@ -10,7 +10,7 @@ TOKEN = ''
 # Индикатор использования русского языка. При значении False все сообщения отправляются на английском
 RU = True
 
-ASK, WAIT, PROCESS, INFO_FOR_CHANGE, ASK_FOR_END = range(5)
+ASK, WAIT, PROCESS, INFO_FOR_CHANGE, INFO_ALPHA, ASK_FOR_END = range(6)
 
 # Enable logging
 logging.basicConfig(
@@ -25,7 +25,7 @@ class Bot:
         self.user_info = dict()
         self.process_commands = [['/crop_photo', '/change_color'],
                                  ['/gray_scale', '/convert'],
-                                 ['/delete_color', '/resize'],
+                                 ['/set_alpha', '/resize'],
                                  ['/back']]
         self.process_menu = ReplyKeyboardMarkup(self.process_commands, one_time_keyboard=True)
 
@@ -43,7 +43,7 @@ class Bot:
                                       f" фото \n"
                                       f"P.S. "
                                       f"Сейчас я скорее всего сплю, а если нет, то предупреждаю - сейчас я знаю только "
-                                      f"команду /change_color",
+                                      f"две команды /change_color и /set_alpha",
                                       reply_markup=ReplyKeyboardMarkup(self.yesno_keyboard, one_time_keyboard=True))
         else:
             self.yesno_keyboard = [['Yes', 'No']]
@@ -55,7 +55,8 @@ class Bot:
     def get_photo(self, update: Update, context: CallbackContext) -> int:
         # Получение фотографии от пользователя
         try:
-            self.user_info['user'], self.user_info['chat_id'] = update.message.from_user.username, update.message.chat_id
+            self.user_info['user'], self.user_info['chat_id'] = \
+                update.message.from_user.username, update.message.chat_id
             photo_file = update.message.photo[-1].get_file()
             photo_file.download(f'data/photos/get/{self.user_info["user"]}_photo.jpg')
             update.message.reply_text('Обрабатываю....')
@@ -63,18 +64,24 @@ class Bot:
                                                            self.user_info["user"])
             update.message.bot.send_photo(chat_id=self.user_info["chat_id"],
                                           photo=open(f'data/photos/to_send/{self.user_info["user"]}.jpg', 'rb'),
-                                      caption='Я получил твоё фото. Вот информация о нём. '
-                                              'Выбери, что мне с ним сделать', reply_markup=self.process_menu)
+                                          caption='Я получил твоё фото. Вот информация о нём. '
+                                          'Выбери, что мне с ним сделать', reply_markup=self.process_menu)
+            logger.info("User %s sent a photo. Success", self.user_info['user'])
             return PROCESS
         except IOError as error:
+            logger.info("User %s sent a photo. Fault, Error - %s", self.user_info['user'], error.__class__.__name__)
             update.message.reply_text('Что-то пошло не так. Попробуй ещё раз')
-
 
     def change_color(self, update: Update, context: CallbackContext) -> int:
         update.message.reply_text('Для этого отправь мне четыре цифры через пробел. Номер цвета, который нужно заменить'
                                   ' из картинки выше и '
                                   'новый цвет в виде r g b .')
         return INFO_FOR_CHANGE
+
+    def set_alpha(self, update: Update, context: CallbackContext) -> int:
+        update.message.reply_text('Для того, чтобы сделать определенный пиксель прозрачным, отправь мне его номер'
+                                  ' из картинки с информацией выше.')
+        return INFO_ALPHA
 
     def check_info(self, update: Update, context: CallbackContext) -> int:
         color, r, g, b = list(map(int, update.message.text.split()))
@@ -86,12 +93,34 @@ class Bot:
             elif rgb[pix_i] > 255:
                 rgb[pix_i] = 255
         update.message.reply_text('Обрабатываю....')
-        PP.change_color(self.user_info['last_photo'][color - 1][1], tuple(rgb), self.user_info['user'])
-        update.message.bot.send_photo(chat_id=self.user_info["chat_id"],
-                                      photo=open(f'data/photos/to_send/{self.user_info["user"]}.jpg', 'rb'),
-                                      caption=f'Цвет под номером {color} успешно заменен')
-        return PROCESS
+        result = PP.change_color(self.user_info['last_photo'][color - 1][1], tuple(rgb), self.user_info['user'])
+        if result is None:
+            update.message.bot.send_photo(chat_id=self.user_info["chat_id"],
+                                          photo=open(f'data/photos/to_send/{self.user_info["user"]}.jpg', 'rb'),
+                                          caption=f'Цвет под номером {color} успешно заменен')
+            logger.info("User %s changed a color. Success", self.user_info['user'])
+            return PROCESS
+        else:
+            error = result.__class__.__name__
+            logger.info("User %s tried to change a color. Fault. Error - %s", self.user_info['user'], error)
 
+    def check_alpha(self, update: Update, context: CallbackContext) -> int:
+        color = int(update.message.text.strip())
+        color = 1 if color not in range(1, 49) else color
+        update.message.reply_text('Обрабатываю....')
+        result = PP.alpha_image(self.user_info['last_photo'][color - 1][1], self.user_info['user'])
+        if result is None:
+            update.message.bot.send_photo(chat_id=self.user_info["chat_id"],
+                                          photo=open(f'data/photos/to_send/{self.user_info["user"]}.png', 'rb',),
+                                          caption=f'Цвет под номером {color} успешно удален. Прилагаю в jpg формате')
+            update.message.bot.send_document(chat_id=self.user_info["chat_id"],
+                                             document=open(f'data/photos/to_send/{self.user_info["user"]}.png', 'rb',),
+                                             caption='Ваш файл в формате png.')
+            logger.info("User %s deleted a color. Success", self.user_info['user'])
+            return PROCESS
+        else:
+            error = result.__class__.__name__
+            logger.info("User %s tried to delete a color. Fault. Error - %s", self.user_info['user'], error)
 
     def help_colors(self, update: Update, context: CallbackContext):
         update.message.reply_text(f'Краткая информация, необходимая для работы со мной:'
@@ -108,7 +137,7 @@ class Bot:
         update.message.reply_markup = self.process_menu
 
     def cancel(self, update: Update, context: CallbackContext):
-        logger.info("User %s left us.", update.message.from_user.username)
+        logger.info("User %s left us.", self.user_info['user'])
         return ConversationHandler.END
 
     def remove_job_if_exists(self, name: str, context: CallbackContext) -> bool:
@@ -132,10 +161,16 @@ class Bot:
                                                ASK: [MessageHandler(Filters.regex('Да|да|Yes|yes'), self.ask),
                                                      MessageHandler(Filters.regex('Нет|нет|no|No'), self.cancel)],
                                                WAIT: [MessageHandler(Filters.photo, self.get_photo)],
-                                               PROCESS: [CommandHandler('change_color', self.change_color)],
+                                               PROCESS: [CommandHandler('change_color', self.change_color),
+                                                         CommandHandler('set_alpha', self.set_alpha)],
                                                INFO_FOR_CHANGE: [MessageHandler
                                                                  (Filters.regex('^\d{1,2}\s\d{1,3}\s\d{1,3}\s\d{1,3}$'),
-                                                                  self.check_info)]
+                                                                  self.check_info)],
+                                               # Регулярная строка выше переводится как число из 1 или 2 цифр и
+                                               # 3 чисел из 1, 2 или 3 цифр
+                                               INFO_ALPHA: [MessageHandler(Filters.regex('^\d{1,2}$'),
+                                                                           self.check_alpha)]
+                                               # Регулярная строка переводится как число из 1 или 2 цифр
                                            },
                                            fallbacks=[CommandHandler('cancel', self.cancel)])
         # Добавление хэндлера с состояниями

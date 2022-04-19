@@ -9,24 +9,24 @@ import os
 import sys
 
 
-def rotate_image(image: str, degrees: int):
+def try_to_save(img: Image, user: str, form: str) -> Exception | None:
     try:
-        image_name = Image.open(image)
-        rotated_image = image_name.rotate(degrees, expand=True)
-        rotated_image.save(image)
+        img = img.save(f"data/photos/to_send/{user}.{form}")
     except IOError as error:
         return error
-    return
+    return None
 
 
-def gray_scale(image: str) -> None | Exception:
-    try:
-        image = Image.open(image)
-        gray_image = image.convert('L')
-        gray_image.save(image)
-    except IOError as error:
-        return error
-    return
+def rotate_image(user: str, degrees: int) -> Exception | None:
+    img = Image.open(f"data/photos/get/{user}_photo.jpg")
+    rotated_image = img.rotate(degrees, expand=True)
+    return try_to_save(rotated_image, user, 'jpg')
+
+
+def gray_scale(user: str) -> None | Exception:
+    img = Image.open(f"data/photos/get/{user}_photo.jpg")
+    gray_image = img.convert('L')
+    return try_to_save(gray_image, user, 'jpg')
 
 
 def check_count_pixels(image: str) -> int:
@@ -79,56 +79,46 @@ def count_unique(image: str, user: str) -> list:
         cord_y += 30
         if cord_y >= 500:
             cord_x, cord_y = cord_x + 265, 20
-    pixels_pic.save(f'data/photos/to_send/{user}.jpg')
+    try_to_save(pixels_pic, user, 'jpg')
     return sorted_
 
 
-def alpha_image(image: str, pixel):
-    pass
+def alpha_image(positions: list, user: str) -> Exception | None:
+    img = Image.open(f"data/photos/get/{user}_photo.jpg")
+    pixels = img.load()
+    img_new = Image.new('RGBA', img.size, (0, 0, 0, 0))
+    img_new.show()
+    img_new.paste(img)
+    pixels_new = img_new.load()
+    for pos in positions:
+        x, y = pos
+        pixels_new[x, y] = (0, 0, 0, 0)
+    return try_to_save(img_new, user, 'png')
 
 
-def to_png(image: str):
-    try:
-        new_image = image.split('.')[0] + '.png'
-        Image.open(image).save(new_image)
-        return new_image
-    except IOError as error:
-        return error
+def to_png(user: str) -> Exception | None:
+    path = f"data/photos/get/{user}_photo.jpg"
+    new_path = path.split('.')[0] + 'png'
+    img = Image.open(path)
+    return try_to_save(img, new_path, 'png')
 
 
-def change_color(positions, to, user):
+def change_color(positions: list, to: tuple, user: str) -> Exception | None:
     img = Image.open(f"data/photos/get/{user}_photo.jpg")
     pixels = img.load()
     for pos in positions:
         x, y = pos
         pixels[x, y] = to
-    try:
-        img = img.save(f"data/photos/to_send/{user}.jpg")
-    except IOError as error:
-        pass
+    return try_to_save(img, user, 'jpg')
 
 
-def delete_color(image_name: str, num: int):
-    image = Image.open(image_name, mode='RGBA')
-    x, y = image.size
-    pixels = image.load()
-    for x_i in range(x):
-        for y_i in range(y):
-            if pixels[x_i, y_i] == num:
-                pixels[x_i, y_i] = (0, 0, 0, 0)
-    try:
-        image.save(image_name)
-    except IOError as error:
-        return error
-
-
-def resize(image, percents):
-    image = cv2.imread(image, cv2.IMREAD_UNCHANGED)
-    if percents != 0:
-        width = int(image.shape[1] * percents / 100)
-        height = int(image.shape[0] * percents / 100)
-        dim = (width, height)
-        resized = cv2.resize(image, dim, interpolation=cv2.INTER_AREA)
-        # cv2.imwrite()
-    else:
-        return 'Я не люблю когда надо мной так шутят'
+# def resize(image, percents):
+#     image = cv2.imread(image, cv2.IMREAD_UNCHANGED)
+#     if percents != 0:
+#         width = int(image.shape[1] * percents / 100)
+#         height = int(image.shape[0] * percents / 100)
+#         dim = (width, height)
+#         resized = cv2.resize(image, dim, interpolation=cv2.INTER_AREA)
+#         cv2.imwrite()
+#     else:
+#         return 'Я не люблю когда надо мной так шутят'
