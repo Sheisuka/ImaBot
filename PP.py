@@ -62,7 +62,7 @@ def count_unique(image: str, user: str) -> list:
     # Создание изображения для вывода пользователю
     pixels_count, pixel_size = 20, 15
     font = ImageFont.truetype('data/fonts/tnr.ttf', size=13)
-    pixels_pic = Image.new('RGB', (750, 550), 'white')
+    pixels_pic = Image.new('RGB', (800, 500), 'white')
     draw = ImageDraw.Draw(pixels_pic)
     cord_x, cord_y = 30, 20
     for index, item in enumerate(sorted_):
@@ -96,8 +96,16 @@ def to_png(image: str):
         return error
 
 
-def change_color(what, to):
-    pass
+def change_color(positions, to, user):
+    img = Image.open(f"data/photos/get/{user}_photo.jpg")
+    pixels = img.load()
+    for pos in positions:
+        x, y = pos
+        pixels[x, y] = to
+    try:
+        img = img.save(f"data/photos/to_send/{user}.jpg")
+    except IOError as error:
+        pass
 
 
 def delete_color(image_name: str, num: int):

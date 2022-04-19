@@ -1,8 +1,7 @@
 # Импорты
 import logging
 from telegram import Update, ReplyKeyboardMarkup
-from telegram.ext import Updater, CommandHandler, CallbackContext, ConversationHandler, MessageHandler, Filters, \
-    DictPersistence
+from telegram.ext import Updater, CommandHandler, CallbackContext, ConversationHandler, MessageHandler, Filters
 import PP
 
 # Токен бота. Удалять перед комитами
@@ -11,7 +10,7 @@ TOKEN = ''
 # Индикатор использования русского языка. При значении False все сообщения отправляются на английском
 RU = True
 
-ASK, WAIT, PROCESS = range(3)
+ASK, WAIT, PROCESS, INFO_FOR_CHANGE, ASK_FOR_END = range(5)
 
 # Enable logging
 logging.basicConfig(
@@ -36,17 +35,20 @@ class Bot:
         logger.info("User %s sent has started a conversation.", user)
         global RU
         if update.message.from_user['language_code'] != 'ru':
-            RU = False
+            RU = True
         if RU:
             self.yesno_keyboard = [['Да', 'Нет']]
             update.message.reply_text(f"Привет {user}! "
                                       f"Я Имаджеро. Что привело тебя ко мне? Могу ли я помочь тебе обработать парочку"
-                                      f" фото"
-                                      f"", reply_markup=ReplyKeyboardMarkup(self.yesno_keyboard, one_time_keyboard=True))
+                                      f" фото \n"
+                                      f"P.S. "
+                                      f"Сейчас я скорее всего сплю, а если нет, то предупреждаю - сейчас я знаю только "
+                                      f"команду /change_color",
+                                      reply_markup=ReplyKeyboardMarkup(self.yesno_keyboard, one_time_keyboard=True))
         else:
             self.yesno_keyboard = [['Yes', 'No']]
             update.message.reply_text(f"Hi {user}! I'm Imagero. Will I help you"
-                                      f"with processing some photos?",
+                                      f" with processing some photos?",
                                       reply_markup=ReplyKeyboardMarkup(self.yesno_keyboard, one_time_keyboard=True))
         return ASK
 
@@ -66,6 +68,30 @@ class Bot:
             return PROCESS
         except IOError as error:
             update.message.reply_text('Что-то пошло не так. Попробуй ещё раз')
+
+
+    def change_color(self, update: Update, context: CallbackContext) -> int:
+        update.message.reply_text('Для этого отправь мне четыре цифры через пробел. Номер цвета, который нужно заменить'
+                                  ' из картинки выше и '
+                                  'новый цвет в виде r g b .')
+        return INFO_FOR_CHANGE
+
+    def check_info(self, update: Update, context: CallbackContext) -> int:
+        color, r, g, b = list(map(int, update.message.text.split()))
+        rgb = [r, g, b]
+        color = 48 if color > 48 else color
+        for pix_i in range(len(rgb)):
+            if rgb[pix_i] < 0:
+                rgb[pix_i] = 0
+            elif rgb[pix_i] > 255:
+                rgb[pix_i] = 255
+        update.message.reply_text('Обрабатываю....')
+        PP.change_color(self.user_info['last_photo'][color - 1][1], tuple(rgb), self.user_info['user'])
+        update.message.bot.send_photo(chat_id=self.user_info["chat_id"],
+                                      photo=open(f'data/photos/to_send/{self.user_info["user"]}.jpg', 'rb'),
+                                      caption=f'Цвет под номером {color} успешно заменен')
+        return PROCESS
+
 
     def help_colors(self, update: Update, context: CallbackContext):
         update.message.reply_text(f'Краткая информация, необходимая для работы со мной:'
@@ -103,10 +129,13 @@ class Bot:
 
         conv_handler = ConversationHandler(entry_points=[CommandHandler('start', self.start)],
                                            states={
-                                               ASK: [MessageHandler(Filters.regex('Да|да'), self.ask),
-                                                     MessageHandler(Filters.regex('нет'), self.cancel)],
+                                               ASK: [MessageHandler(Filters.regex('Да|да|Yes|yes'), self.ask),
+                                                     MessageHandler(Filters.regex('Нет|нет|no|No'), self.cancel)],
                                                WAIT: [MessageHandler(Filters.photo, self.get_photo)],
-                                               #PROCESS: [CommandHandler('change_color', PP.change_color())]
+                                               PROCESS: [CommandHandler('change_color', self.change_color)],
+                                               INFO_FOR_CHANGE: [MessageHandler
+                                                                 (Filters.regex('^\d{1,2}\s\d{1,3}\s\d{1,3}\s\d{1,3}$'),
+                                                                  self.check_info)]
                                            },
                                            fallbacks=[CommandHandler('cancel', self.cancel)])
         # Добавление хэндлера с состояниями
