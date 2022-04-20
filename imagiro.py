@@ -5,7 +5,7 @@ from telegram.ext import Updater, CommandHandler, CallbackContext, ConversationH
 import PP
 
 # Токен бота. Удалять перед комитами
-TOKEN = '5222745741:AAHJws-Ejl09au5E21wXhpKpMRF5ZVI32Gc'
+TOKEN = ''
 
 # Индикатор использования русского языка. При значении False все сообщения отправляются на английском
 RU = True
