@@ -112,6 +112,15 @@ def change_color(positions: list, to: tuple, user: str) -> Exception | None:
     return try_to_save(img, user, 'jpg')
 
 
+def change_filepaths(user: str) -> Exception | list:
+    img_send = Image.open(f'data/photos/to_send/{user}.jpg')
+    try:
+        img_send.save(f'data/photos/get/{user}_photo.jpg')
+    except IOError as error:
+        print(error.__class__.__name__)
+    return count_unique(f'data/photos/get/{user}_photo.jpg', user)
+
+
 # def resize(image, percents):
 #     image = cv2.imread(image, cv2.IMREAD_UNCHANGED)
 #     if percents != 0:
