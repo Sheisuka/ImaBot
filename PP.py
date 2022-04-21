@@ -3,35 +3,47 @@
 
 from PIL import Image, ImageDraw, ImageFont
 import cv2
-import time
 import json
-import os
-import sys
-
-
-def try_to_save(img: Image, user: str, form: str) -> Exception | None:
-    try:
-        img = img.save(f"data/photos/to_send/{user}.{form}")
-    except IOError as error:
-        return error
-    return None
+import utility as ut
 
 
 def rotate_image(user: str, degrees: int) -> Exception | None:
-    img = Image.open(f"data/photos/get/{user}_photo.jpg")
+    """  Поворачивает изображение на указанную градусную меру против часовой стрелки"""
+    img = Image.open(ut.get_path(user, 'get', 'jpg'))
     rotated_image = img.rotate(degrees, expand=True)
-    return try_to_save(rotated_image, user, 'jpg')
+    return ut.try_to_save(rotated_image, user, 'jpg')
+
+
+def black_and_white(user: str) -> None | Exception:
+    im = Image.open(ut.get_path(user, 'get', 'jpg'))
+    pixels = im.load()
+    x, y = im.size
+    for x_i in range(x):
+        for y_i in range(y):
+            r, g, b = pixels[x_i, y_i]
+            average_rgb = int((r + g + b) / 3)
+            if average_rgb < 126:
+                pixels[x_i, y_i] = (0, 0, 0)
+            else:
+                pixels[x_i, y_i] = (255, 255, 255)
+    return ut.try_to_save(im, user, 'jpg')
 
 
 def gray_scale(user: str) -> None | Exception:
-    img = Image.open(f"data/photos/get/{user}_photo.jpg")
-    gray_image = img.convert('L')
-    return try_to_save(gray_image, user, 'jpg')
+    im = Image.open(ut.get_path(user, 'get', 'jpg'))
+    pixels = im.load()
+    x, y = im.size
+    for x_i in range(x):
+        for y_i in range(y):
+            r, g, b = pixels[x_i, y_i]
+            average_rgb = int((0.3 * r) + (0.59 * g) + (0.11 * b))
+            pixels[x_i, y_i] = (average_rgb, average_rgb, average_rgb)
+    return ut.try_to_save(im, user, 'jpg')
 
 
-def check_count_pixels(image: str) -> int:
-    size = Image.open(image).size
-    return size[0] * size[1] < 600 ** 2
+def check_count_pixels(user: str) -> int:
+    size = Image.open(ut.get_path(user, 'get', 'jpg')).size
+    return size[0] * size[1] <= 1000 ** 2
 
 
 def count_unique(image: str, user: str) -> list:
@@ -61,8 +73,9 @@ def count_unique(image: str, user: str) -> list:
 
     # Создание изображения для вывода пользователю
     pixels_count, pixel_size = 20, 15
+    width = round(len(sorted_) / 16) * 266
+    pixels_pic = Image.new('RGB', (width, 500), 'white')
     font = ImageFont.truetype('data/fonts/tnr.ttf', size=13)
-    pixels_pic = Image.new('RGB', (800, 500), 'white')
     draw = ImageDraw.Draw(pixels_pic)
     cord_x, cord_y = 30, 20
     for index, item in enumerate(sorted_):
@@ -79,13 +92,13 @@ def count_unique(image: str, user: str) -> list:
         cord_y += 30
         if cord_y >= 500:
             cord_x, cord_y = cord_x + 265, 20
-    try_to_save(pixels_pic, user, 'jpg')
+    ut.try_to_save(pixels_pic, user, 'jpg')
     return sorted_
 
 
 def alpha_image(positions: list, user: str) -> Exception | None:
-    img = Image.open(f"data/photos/get/{user}_photo.jpg")
-    pixels = img.load()
+    """ Делает пиксели по координатам из positions прозрачными. Результат сохраняет"""
+    img = Image.open(ut.get_path(user, 'get', 'jpg'))
     img_new = Image.new('RGBA', img.size, (0, 0, 0, 0))
     img_new.show()
     img_new.paste(img)
@@ -93,41 +106,51 @@ def alpha_image(positions: list, user: str) -> Exception | None:
     for pos in positions:
         x, y = pos
         pixels_new[x, y] = (0, 0, 0, 0)
-    return try_to_save(img_new, user, 'png')
+    return ut.try_to_save(img_new, user, 'png')
 
 
 def to_png(user: str) -> Exception | None:
-    path = f"data/photos/get/{user}_photo.jpg"
+    """ Меняет формат изображения на png"""
+    path = f"data/photos/get/{user}.jpg"
     new_path = path.split('.')[0] + 'png'
     img = Image.open(path)
-    return try_to_save(img, new_path, 'png')
+    return ut.try_to_save(img, new_path, 'png')
 
 
 def change_color(positions: list, to: tuple, user: str) -> Exception | None:
-    img = Image.open(f"data/photos/get/{user}_photo.jpg")
+    """ Меняет все пиксели по координатам из positions на пиксели со значением to. Результат сохраняет"""
+    img = Image.open(ut.get_path(user, 'get', 'jpg'))
     pixels = img.load()
     for pos in positions:
         x, y = pos
         pixels[x, y] = to
-    return try_to_save(img, user, 'jpg')
+    return ut.try_to_save(img, user, 'jpg')
 
 
 def change_filepaths(user: str) -> Exception | list:
-    img_send = Image.open(f'data/photos/to_send/{user}.jpg')
+    """ Меняет местами фото для отправки и фото полученное с целью продолжения работы"""
+    img_send = Image.open(ut.get_path(user, 'to_send', 'jpg'))
     try:
-        img_send.save(f'data/photos/get/{user}_photo.jpg')
+        img_send.save(ut.get_path(user, 'get', 'jpg'))
     except IOError as error:
         print(error.__class__.__name__)
-    return count_unique(f'data/photos/get/{user}_photo.jpg', user)
+    return count_unique(ut.get_path(user, 'get', 'jpg'), user)
 
 
-# def resize(image, percents):
-#     image = cv2.imread(image, cv2.IMREAD_UNCHANGED)
-#     if percents != 0:
-#         width = int(image.shape[1] * percents / 100)
-#         height = int(image.shape[0] * percents / 100)
-#         dim = (width, height)
-#         resized = cv2.resize(image, dim, interpolation=cv2.INTER_AREA)
-#         cv2.imwrite()
-#     else:
-#         return 'Я не люблю когда надо мной так шутят'
+def resize(user: str, percents: int):
+    """ Изменяет размер фотографии на (percents + 100) процентов. Результат сохраняет"""
+    image = cv2.imread(ut.get_path(user, 'get', 'jpg'), cv2.IMREAD_UNCHANGED)
+    if percents in range(-99, 501):
+        percents += 100
+        width = int(image.shape[1] * percents / 100)
+        height = int(image.shape[0] * percents / 100)
+        dim = (width, height)
+        resized = cv2.resize(image, dim, interpolation=cv2.INTER_AREA)
+        try:
+            cv2.imwrite(ut.get_path(user, 'to_send', 'jpg'), resized)
+        except IOError as error:
+            return error
+        return None
+    else:
+        return 'Я не люблю когда надо мной так шутят'
+
