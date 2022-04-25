@@ -1,0 +1,68 @@
+{
+    "greeting": {
+        "ru": "Привет! Я Имаджиро. Отправь мне одно фото если хочешь, чтобы я тебе помог обработать его.",
+        "en": "Hi! I am Imagiro. If you want to processe some photos send me one of these."
+    },
+    "error_again": {
+        "ru": "Что-то пошло не так :(. Отправь мне фото ещё раз.",
+        "en": "Something went wrong :(. Try to send photo one more time"
+    },
+    "processing": {
+        "ru": "Обрабатываю...",
+        "en": "Processing..."
+    },
+    "gray_scale_success": {
+        "ru": "Фото успешнено переведено в черно-белые цвета.",
+        "en": "The photo was grayscaled successfully."
+    },
+    "resize_info": {
+        "ru": "Для того, чтобы изменить размер изображения отправь мне количество процентов, на которое новое должно отличаться от старого от -99 до 500.",
+        "en": "To resize the photo send me a number of percents from -99 to 500 ПОМОЩЬ!!!!"
+    },
+    "ask_end": {
+        "ru": "Хочешь продолжить обработку этого фото?",
+        "en": "Do you want to continue processing the photo?"
+    },
+    "got_photo": {
+        "ru": "Я получил твоё фото. Выбери что мне сделать с ним теперь.",
+        "en": "I got your photo. What should I do now?"
+    },
+    "change_color": {
+        "ru": "Отправь мне четыре цифры через пробел. Номер цвета, который нужно заменить и новый цвет в виде r g b. К примеру 1 0 255 0.",
+        "en": "Send me four numbers splitted with space. Index of color to change and new color like r g b. For example 1 0 255 0"
+    },
+    "set_alpha": {
+        "ru": "Для того, чтобы сделать цвет прозрачным отправь мне его номер из фото, что тебе отправил я.",
+        "en": "Choose a number of color which you want to change from the picture that I have sent to you"
+    },
+    "last_info": {
+        "ru": "Последняя версия информации о твоём фото. Что мне сделать теперь?",
+        "en": "Current info about your photo. What should I do now?"
+    },
+    "resize_success": {
+        "ru": "Размер изображения успешно изменён.",
+        "en": "Size of the photo was changes successfully."
+    },
+    "resize_troll": {
+        "ru": "Отправь новое значение. Давай в этот раз обойдёмся без нулей? Иначе я убью тебя и твою семью.",
+        "en": "Send me a new value. Do not send me null again. If you do I am gonna kill you and whole your family."
+    },
+    "change_color_success": {
+        "ru": "Цвет под выбранным номером успешно изменён.",
+        "en": "The color was successfully changed."
+    },
+    "set_alpha_success": {
+        "jpg": {
+            "ru": "Выбранный цвет успешно удалён. Прилагаю результат в jpg.",
+            "en": "The color was deleted successfuly. Here is your new jpg photo."
+        },
+        "png": {
+            "ru": "Ваш файл в формате png.",
+            "en": "Here is your png photo."
+        }
+    },
+    "cancel": {
+        "ru": "Рад был помочь.",
+        "en": "I was glad to help you."
+    }
+}
