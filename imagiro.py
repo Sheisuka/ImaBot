@@ -11,7 +11,7 @@ TOKEN = '5222745741:AAHJws-Ejl09au5E21wXhpKpMRF5ZVI32Gc'
 # Индикатор использования русского языка. При значении False все сообщения отправляются на английском
 RU = True
 
-ASK, WAIT, PROCESS, INFO_FOR_CHANGE, INFO_ALPHA, INFO_RESIZE, ASK_FOR_END = range(7)
+ASK, WAIT, PROCESS, INFO_FOR_CHANGE, INFO_ALPHA, INFO_RESIZE, ASK_FOR_END, INFO_ROTATE = range(8)
 
 # Enable logging
 logging.basicConfig(
@@ -26,7 +26,7 @@ class Bot:
         self.user_info = dict()
 
         # Клавиатуры
-        self.process_commands = [['/change_color'],
+        self.process_commands = [['/change_color', '/rotate'],
                                  ['/gray_scale'], #convert Добавить
                                  ['/set_alpha', '/resize'],
                                  ['/black_and_white'],
@@ -59,8 +59,12 @@ class Bot:
                                       reply_markup=ReplyKeyboardMarkup(self.yesno_keyboard, one_time_keyboard=True))
         return ASK
 
+    def rotate(self, update: Update, context: CallbackContext) -> int:
+        update.message.reply_text("Отправь мне одно число - поворот изображения против часовой стрелки в градусах")
+        return INFO_ROTATE
+
     def try_fix_error(self, update: Update, context: CallbackContext) -> int:
-        update.message.reply_text('Что-то пошло не так :( \n Отправь мне фото ещё раз')
+        update.message.reply_text('Что-то пошло не так :( \n Отправь мн фото ещё раз')
         return WAIT
 
     def gray_scale(self, update: Update, context: CallbackContext):
@@ -137,6 +141,12 @@ class Bot:
                                       caption='Последняя версия информации о твоём фото. '
                                               'Что мне сделать теперь?')
         return PROCESS
+
+    def check_rotate(self, update: Update, context: CallbackContext):
+        degrees = int(update.message.text)
+        result = PP.rotate_image(self.user, degrees)
+        if result is None:
+            pass
 
     def check_resize(self, update: Update, context: CallbackContext):
         percents = int(update.message.text)
@@ -243,6 +253,7 @@ class Bot:
                                                          CommandHandler('resize', self.resize),
                                                          CommandHandler('gray_scale', self.gray_scale),
                                                          CommandHandler('black_and_white', self.black_and_white),
+                                                         CommandHandler['rotate', self.rotate]
                                                          *ask_end_commands],
                                                INFO_FOR_CHANGE: [MessageHandler
                                                                  (Filters.regex('^\d{1,2}\s\d{1,3}\s\d{1,3}\s\d{1,3}$'),
@@ -255,6 +266,8 @@ class Bot:
                                                # ASK_FOR_END: [CommandHandler('yes', self.continue_processing),
                                                #               CommandHandler('end', self.cancel)]
                                                INFO_RESIZE: [MessageHandler(Filters.regex('^[-+]?\d{1,3}$'),
+                                                                            self.check_resize), *ask_end_commands],
+                                               INFO_ROTATE: [MessageHandler(Filters.regex('^\d{1,3}$'),
                                                                             self.check_resize), *ask_end_commands]
                                            },
                                            fallbacks=[CommandHandler('cancel', self.cancel)])

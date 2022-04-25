@@ -64,5 +64,9 @@
     "cancel": {
         "ru": "Рад был помочь.",
         "en": "I was glad to help you."
+    },
+    "rotate": {
+        "ru": "Отправь мне одно число - поворот изображения против часовой стрелки в градусах.",
+        "en": "Send me one number - turn counterclockwise in degrees.   "
     }
 }

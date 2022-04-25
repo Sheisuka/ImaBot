@@ -7,7 +7,7 @@ import json
 import utility as ut
 
 
-def rotate_image(user: str, degrees: int) -> Exception | None:
+def rotate_image(user: str, degrees: int) -> None | Exception:
     """  Поворачивает изображение на указанную градусную меру против часовой стрелки"""
     img = Image.open(ut.get_path(user, 'get', 'jpg'))
     rotated_image = img.rotate(degrees, expand=True)
@@ -96,7 +96,7 @@ def count_unique(image: str, user: str) -> list:
     return sorted_
 
 
-def alpha_image(positions: list, user: str) -> Exception | None:
+def alpha_image(positions: list, user: str) -> None | Exception:
     """ Делает пиксели по координатам из positions прозрачными. Результат сохраняет"""
     img = Image.open(ut.get_path(user, 'get', 'jpg'))
     img_new = Image.new('RGBA', img.size, (0, 0, 0, 0))
@@ -117,7 +117,7 @@ def to_png(user: str) -> Exception | None:
     return ut.try_to_save(img, new_path, 'png')
 
 
-def change_color(positions: list, to: tuple, user: str) -> Exception | None:
+def change_color(positions: list, to: tuple, user: str) -> None | Exception:
     """ Меняет все пиксели по координатам из positions на пиксели со значением to. Результат сохраняет"""
     img = Image.open(ut.get_path(user, 'get', 'jpg'))
     pixels = img.load()
