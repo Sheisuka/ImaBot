@@ -17,7 +17,7 @@
     },
     "resize_info": {
         "ru": "Для того, чтобы изменить размер изображения отправь мне количество процентов, на которое новое должно отличаться от старого от -99 до 500.",
-        "en": "To resize the photo send me a number of percents from -99 to 500 ПОМОЩЬ!!!!"
+        "en": "To resize send me a number of percents by which a new photo must be bigger than an old one from -99 to 500."
     },
     "ask_end": {
         "ru": "Хочешь продолжить обработку этого фото?",
@@ -54,7 +54,7 @@
     "set_alpha_success": {
         "jpg": {
             "ru": "Выбранный цвет успешно удалён. Прилагаю результат в jpg.",
-            "en": "The color was deleted successfuly. Here is your new jpg photo."
+            "en": "The color was deleted successfully. Here is your new jpg photo."
         },
         "png": {
             "ru": "Ваш файл в формате png.",

@@ -41,6 +41,7 @@ def gray_scale(user: str) -> None | Exception:
     return ut.try_to_save(im, user, 'jpg')
 
 
+
 def check_count_pixels(user: str) -> int:
     size = Image.open(ut.get_path(user, 'get', 'jpg')).size
     return size[0] * size[1] <= 1000 ** 2
@@ -50,7 +51,7 @@ def count_unique(image: str, user: str) -> list:
     """ Подсчет пикселей, распределение по группам, отрисовка вывода"""
 
     # Подсчет пикселей и группировка
-    with open('data/colors.json') as file:
+    with open('data/json/colors.json') as file:
         color_dict = json.load(file)
     image = Image.open(image)
     x, y = image.size
