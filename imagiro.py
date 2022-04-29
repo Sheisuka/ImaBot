@@ -5,7 +5,7 @@ from telegram.ext import Updater, CommandHandler, CallbackContext, ConversationH
 import PP
 import utility as ut
 import json
-from typing import Union
+from typing import Optional
 import data.db.db as database
 import codecs
 
@@ -29,7 +29,7 @@ class Bot:
     def __init__(self):
 
         # Клавиатуры
-        self.user_info = Union[None, dict]
+        self.user_info = Optional[dict]
         self.process_commands = [['/change_color', '/rotate'],
                                  ['/gray_scale'], #convert Добавить
                                  ['/set_alpha', '/resize'],
