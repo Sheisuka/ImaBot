@@ -3,7 +3,7 @@ import os
 
 
 def try_to_save(img: Image, user: str, form: str) -> Exception | None:
-    """ Сохряняет фото с указанными параметрами"""
+    """Сохряняет фото с указанными параметрами"""
     try:
         img.save(get_path(user, 'to_send', form))
     except IOError as error:
@@ -12,7 +12,7 @@ def try_to_save(img: Image, user: str, form: str) -> Exception | None:
 
 
 def get_path(user: str, direction: str, form: str) -> str:
-    """ Возвращает путь до фотографии"""
+    """Возвращает путь до фотографии"""
     path = f'data/photos/{direction}/{user}.{form}'
     return path
 
@@ -23,5 +23,3 @@ def clear_directions(user: str):
         for file in os.listdir(f'data/photos/{folder}'):
             if user in file:
                 os.remove(f'data/photos/{folder}/{file}')
-
-

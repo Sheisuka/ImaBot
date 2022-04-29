@@ -5,12 +5,13 @@ from PIL import Image, ImageDraw, ImageFont
 import cv2
 import json
 import utility as ut
+from googletrans import Translator
 
 
 def rotate_image(user: str, degrees: int) -> None | Exception:
     """  Поворачивает изображение на указанную градусную меру против часовой стрелки"""
     img = Image.open(ut.get_path(user, 'get', 'jpg'))
-    rotated_image = img.rotate(degrees, expand=True)
+    rotated_image = img.rotate(degrees, expand=True, fillcolor=(255, 255, 255))
     return ut.try_to_save(rotated_image, user, 'jpg')
 
 
@@ -41,13 +42,12 @@ def gray_scale(user: str) -> None | Exception:
     return ut.try_to_save(im, user, 'jpg')
 
 
-
 def check_count_pixels(user: str) -> int:
     size = Image.open(ut.get_path(user, 'get', 'jpg')).size
     return size[0] * size[1] <= 1000 ** 2
 
 
-def count_unique(image: str, user: str) -> list:
+def count_unique(image: str, user: str, translate, lang: str) -> list:
     """ Подсчет пикселей, распределение по группам, отрисовка вывода"""
 
     # Подсчет пикселей и группировка
@@ -88,7 +88,11 @@ def count_unique(image: str, user: str) -> list:
         draw.line(((cord_x - 1, cord_y - 1), (cord_x + pixel_size + 1, cord_y - 1),
                    (cord_x + 1 + pixel_size, cord_y + 1 + pixel_size),
                    (cord_x - 1, cord_y + 1 + pixel_size), (cord_x - 1, cord_y - 1)), fill='black', width=1)
-        draw.text((cord_x + pixel_size * 2, cord_y), text=f'{name}', font=font, fill='black')
+        if lang != 'en':
+            draw.text((cord_x + pixel_size * 2, cord_y), text=f'{translate(text=name, dest=lang).text}',
+                      font=font, fill='black')
+        else:
+            draw.text((cord_x + pixel_size * 2, cord_y), text=f'{name}', font=font, fill='black')
         draw.text((cord_x + pixel_size * 10, cord_y), text=f'{count} pixels', font=font, fill='black')
         cord_y += 30
         if cord_y >= 500:
@@ -101,7 +105,6 @@ def alpha_image(positions: list, user: str) -> None | Exception:
     """ Делает пиксели по координатам из positions прозрачными. Результат сохраняет"""
     img = Image.open(ut.get_path(user, 'get', 'jpg'))
     img_new = Image.new('RGBA', img.size, (0, 0, 0, 0))
-    img_new.show()
     img_new.paste(img)
     pixels_new = img_new.load()
     for pos in positions:
@@ -110,7 +113,7 @@ def alpha_image(positions: list, user: str) -> None | Exception:
     return ut.try_to_save(img_new, user, 'png')
 
 
-def to_png(user: str) -> Exception | None:
+def to_png(user: str) -> None | Exception:
     """ Меняет формат изображения на png"""
     path = f"data/photos/get/{user}.jpg"
     new_path = path.split('.')[0] + 'png'
@@ -134,14 +137,14 @@ def change_filepaths(user: str) -> Exception | list:
     try:
         img_send.save(ut.get_path(user, 'get', 'jpg'))
     except IOError as error:
-        print(error.__class__.__name__)
+        return error
     return count_unique(ut.get_path(user, 'get', 'jpg'), user)
 
 
 def resize(user: str, percents: int):
     """ Изменяет размер фотографии на (percents + 100) процентов. Результат сохраняет"""
     image = cv2.imread(ut.get_path(user, 'get', 'jpg'), cv2.IMREAD_UNCHANGED)
-    if percents in range(-99, 501):
+    if percents in range(-99, 501) and percents != 0:
         percents += 100
         width = int(image.shape[1] * percents / 100)
         height = int(image.shape[0] * percents / 100)
@@ -154,4 +157,3 @@ def resize(user: str, percents: int):
         return None
     else:
         return 'Я не люблю когда надо мной так шутят'
-

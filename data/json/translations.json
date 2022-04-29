@@ -28,8 +28,8 @@
         "en": "I got your photo. What should I do now?"
     },
     "change_color": {
-        "ru": "Отправь мне четыре цифры через пробел. Номер цвета, который нужно заменить и новый цвет в виде r g b. К примеру 1 0 255 0.",
-        "en": "Send me four numbers splitted with space. Index of color to change and new color like r g b. For example 1 0 255 0"
+        "ru": "Отправь мне четыре цифры через пробел. Номер цвета, который нужно заменить и новый цвет в виде r g b. К примеру 1 0 255 0",
+        "en": "Send me four numbers splitted by space. Index of color to change and new color like r g b. For example 1 0 255 0 0"
     },
     "set_alpha": {
         "ru": "Для того, чтобы сделать цвет прозрачным отправь мне его номер из фото, что тебе отправил я.",
@@ -68,5 +68,13 @@
     "rotate": {
         "ru": "Отправь мне одно число - поворот изображения против часовой стрелки в градусах.",
         "en": "Send me one number - turn counterclockwise in degrees.   "
+    },
+    "rotate_success": {
+        "ru": "Фото успешно повернуто!",
+        "en": "The photo was rotated successfully"
+    },
+    "wait_second": {
+        "ru": "Подожди секунду...",
+        "en": "Wait a second..."
     }
 }
