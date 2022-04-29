@@ -303,6 +303,7 @@ class Bot(Translator):
 
         # Останавливает работу до первого полученного сигнала
         updater.idle()
+        bot.polling(none_stop=True, interval=0)
 
 
 db_session.global_init("data/db/imagiro.db")
